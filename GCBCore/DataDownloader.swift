@@ -9,12 +9,13 @@ import Alamofire
 
 public protocol DataDownloading {
     func downloadDataAtPath(path: String, completion: (Result<NSData>) -> Void)
+    func downloadDataAtPath(path: String, basicAuthorization: String, completion: (Result<NSData>) -> Void)
 }
 
 public enum DataDownloadingError: ErrorType, HavingMessage {
     case EmptyResponse
     case ImageCannotBeFetched(path: String)
-
+    
     public var message: String {
         switch self {
         case .EmptyResponse:
@@ -26,20 +27,34 @@ public enum DataDownloadingError: ErrorType, HavingMessage {
 }
 
 public final class DataDownloader: DataDownloading {
-
+    
     public init() {
-
+        
     }
-
+    
+    public func downloadDataAtPath(path: String, basicAuthorization: String, completion: (Result<NSData>) -> Void) {
+        
+        let headers = ["Authorization": "Basic " + basicAuthorization]
+        Alamofire.request(.GET, path, headers: headers)
+            .response { (request, response, data, error) in
+                if let data = data {
+                    completion(.Success(data))
+                    return
+                }
+                
+                completion(.Failure(error ?? DataDownloadingError.EmptyResponse))
+        }
+    }
+    
     public func downloadDataAtPath(path: String, completion: (Result<NSData>) -> Void) {
-
+        
         Alamofire.request(.GET, path).response { (request, response, data, error) in
-
+            
             if let data = data {
                 completion(.Success(data))
                 return
             }
-
+            
             completion(.Failure(error ?? DataDownloadingError.EmptyResponse))
         }
     }
